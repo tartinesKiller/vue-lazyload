@@ -6,6 +6,13 @@ export default (lazy) => {
       tag: {
         type: String,
         default: 'div'
+      },
+      container: {
+        default: () => window
+      },
+      id: {
+        type: Number,
+        default: undefined
       }
     },
     render (h) {
@@ -20,8 +27,14 @@ export default (lazy) => {
         state: {
           loaded: false
         },
-        rect: {},
+        rectEl: undefined,
+        rectContainer: undefined,
         show: false
+      }
+    },
+    computed: {
+      isWindow () {
+        return this.container.toString && this.container.toString() === '[object Window]'
       }
     },
     mounted () {
@@ -33,14 +46,22 @@ export default (lazy) => {
       lazy.removeComponent(this)
     },
     methods: {
-      getRect () {
-        this.rect = this.$el.getBoundingClientRect()
+      getRects () {
+        this.rectEl = this.$el.getBoundingClientRect()
+        if (!this.isWindow) {
+          this.rectContainer = this.container.getBoundingClientRect()
+        }
       },
       checkInView () {
-        this.getRect()
-        return inBrowser &&
-                    (this.rect.top < window.innerHeight * lazy.options.preLoad && this.rect.bottom > 0) &&
-                    (this.rect.left < window.innerWidth * lazy.options.preLoad && this.rect.right > 0)
+        this.getRects()
+        if (this.isWindow) {
+          return inBrowser &&
+                      (this.rectEl.top < window.innerHeight * lazy.options.preLoad && this.rectEl.bottom > 0) &&
+                      (this.rectEl.left < window.innerWidth * lazy.options.preLoad && this.rectEl.right > 0)
+        } else {
+          return inBrowser &&
+                      this.rectEl.top > this.rectContainer.top && this.rectEl.top < this.rectContainer.bottom
+        }
       },
       load () {
         this.show = true

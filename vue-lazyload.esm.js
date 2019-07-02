@@ -1337,7 +1337,7 @@ var Lazy = function (Vue) {
 
         var freeList = [];
         this.ListenerQueue.forEach(function (listener, index) {
-          if (!listener.el || !listener.el.parentNode) {
+          if (!listener.$el || !listener.$el.parentNode) {
             freeList.push(listener);
           }
           var catIn = listener.checkInView();
@@ -1346,7 +1346,7 @@ var Lazy = function (Vue) {
         });
         freeList.forEach(function (item) {
           remove(_this7.ListenerQueue, item);
-          item.destroy();
+          item.$destroy();
         });
       }
       /**
@@ -1476,6 +1476,15 @@ var LazyComponent = (function (lazy) {
       tag: {
         type: String,
         default: 'div'
+      },
+      container: {
+        default: function _default() {
+          return window;
+        }
+      },
+      id: {
+        type: Number,
+        default: undefined
       }
     },
     render: function render(h) {
@@ -1490,9 +1499,16 @@ var LazyComponent = (function (lazy) {
         state: {
           loaded: false
         },
-        rect: {},
+        rectEl: undefined,
+        rectContainer: undefined,
         show: false
       };
+    },
+
+    computed: {
+      isWindow: function isWindow() {
+        return this.container.toString && this.container.toString() === '[object Window]';
+      }
     },
     mounted: function mounted() {
       this.el = this.$el;
@@ -1504,12 +1520,19 @@ var LazyComponent = (function (lazy) {
     },
 
     methods: {
-      getRect: function getRect() {
-        this.rect = this.$el.getBoundingClientRect();
+      getRects: function getRects() {
+        this.rectEl = this.$el.getBoundingClientRect();
+        if (!this.isWindow) {
+          this.rectContainer = this.container.getBoundingClientRect();
+        }
       },
       checkInView: function checkInView() {
-        this.getRect();
-        return inBrowser && this.rect.top < window.innerHeight * lazy.options.preLoad && this.rect.bottom > 0 && this.rect.left < window.innerWidth * lazy.options.preLoad && this.rect.right > 0;
+        this.getRects();
+        if (this.isWindow) {
+          return inBrowser && this.rectEl.top < window.innerHeight * lazy.options.preLoad && this.rectEl.bottom > 0 && this.rectEl.left < window.innerWidth * lazy.options.preLoad && this.rectEl.right > 0;
+        } else {
+          return inBrowser && this.rectEl.top > this.rectContainer.top && this.rectEl.top < this.rectContainer.bottom;
+        }
       },
       load: function load() {
         this.show = true;

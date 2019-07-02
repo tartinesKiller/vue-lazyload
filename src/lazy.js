@@ -340,7 +340,7 @@ export default function (Vue) {
     _lazyLoadHandler () {
       const freeList = []
       this.ListenerQueue.forEach((listener, index) => {
-        if (!listener.el || !listener.el.parentNode) {
+        if (!listener.$el || !listener.$el.parentNode) {
           freeList.push(listener)
         }
         const catIn = listener.checkInView()
@@ -349,7 +349,7 @@ export default function (Vue) {
       })
       freeList.forEach(item => {
         remove(this.ListenerQueue, item)
-        item.destroy()
+        item.$destroy()
       })
     }
     /**
